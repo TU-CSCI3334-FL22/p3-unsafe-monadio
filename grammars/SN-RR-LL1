@@ -1,0 +1,3 @@
+Goal : SheepNoise;
+
+SheepNoise : baa SheepNoise | epsilon;

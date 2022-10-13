@@ -1,0 +1,165 @@
+// demo is a small language that is not particularly useful,
+//      except as a target for labs on parsing, scanning, and
+//      IR generation.                 -- kdc  10/2015
+//
+Start            : ProcList
+	         ;
+
+ProcList         : Proc ProcListPrime
+	         ;
+
+ProcListPrime    : Proc ProcListPrime
+       	         | epsilon
+       	         ;
+
+Proc             : ProcHead LBRACKET Decls Stmts RBRACKET 
+	         ; 
+
+ProcHead         : PROCEDURE Name 
+	         ;
+
+Decls            : Decl DeclPrime
+                 ;
+       
+DeclPrime        : Decl DeclPrime
+	         | epsilon
+     	         ;  
+
+Decl             : Type SpecList SEMICOLON 
+                 ;
+
+SpecList         : Specs SpecsListTrailer
+	         ;
+
+SpecsListTrailer : COMMA Specs SpecsListTrailer
+		 | epsilon
+		 ;
+
+Type             :   INT
+       		 |   CHAR 
+       		 ;
+
+Specs  		 :   Name SpecsTrailer
+       		 ;
+
+SpecsTrailer 	 : LSQUARE Bounds RSQUARE
+	     	 | epsilon
+       	     	 ;
+
+Bounds 		 :  Bound BoundPrime
+       		 ;
+
+BoundPrime 	 : COMMA Bound BoundPrime
+       	   	 | epsilon 
+       	   	 ;
+
+Bound  		 :  Number COLON Number 
+       		 ;
+
+Stmts  		 :  Stmt StmtsPrime
+       		 ;
+
+StmtsPrime 	 : Stmt StmtsPrime
+       		 |  epsilon
+       		 ;
+
+Stmt  		 :  Stmt1
+      		 |  IF LPAREN Bool RPAREN THEN Stmt IfTrailer
+      		 ;
+
+IfTrailer 	 : ELSE Stmt
+	  	 | espilon;
+
+Stmt1 		 :  LVRef EQUALS Expr SEMICOLON 
+      		 |  WhileHead LBRACKET Stmts RBRACKET 
+      		 |  ForHead LBRACKET Stmts RBRACKET 
+      		 |  Print 
+      		 |  LBRACKET Stmts RBRACKET 
+      		 ;
+
+ForHead 	 : FOR ScalarRef EQUALS Expr TO Expr BY Expr 
+		 ;
+
+
+WhileHead 	 : WHILE LPAREN Bool RPAREN 
+	  	 ;
+
+Print  		 : PRINT RVRef SEMICOLON 
+       		 ;
+
+LVRef  		 :  Name RefTrailer
+       		 ;
+
+RefTrailer 	 : LSQUARE Exprs RSQUARE
+	     	 | espilon
+       	     	 ;
+
+RVRef  		 :  Name RefTrailer
+       		 ;
+       
+Exprs		:  Expr ExprsTrailer
+       		;
+
+ExprsTrailer 	: COMMA Expr ExprsTrailer
+       	     	|  epsilon
+       	     	;
+
+Expr   		: Term ExprPrime
+       		;
+
+ExprPrime 	: PLUS  Term ExprPrime
+	  	| MINUS Term ExprPrime
+	  	| epsilon
+	  	;
+
+Term      	: Factor TermPrime
+	  	;
+
+TermPrime 	: TIMES  Factor TermPrime
+	  	| DIVIDE Factor TermPrime
+	  	| epsilon
+	  	;
+
+Factor    	: LPAREN Expr RPAREN 
+       	  	| RVRef      
+       	  	| Number     
+       	  	| StringConst
+       	  	;
+
+Name   		: NAME 
+       		;
+
+Number 		:  NUMBER 
+       		;
+
+StringConst 	: STRING
+	    	;
+
+RelExpr 	: Expr RelTrailer
+		;
+
+RelTrailer 	: LT RelExpr
+           	| LE RelExpr
+	   	| EQ RelExpr
+           	| NE RelExpr
+           	| GE RelExpr
+           	| GT RelExpr
+		;
+
+Bool 		: NOT OrTerm
+       		| OrTerm 
+     		;
+
+OrTerm 		: AndTerm OrTrailer
+       		;
+
+OrTrailer 	: OR AndTerm OrTrailer
+       	  	| epsilon
+	  	;
+
+AndTerm   	: RelExpr AndTrailer
+	  	;
+
+AndTrailer 	: AND RelExor
+           	| epsilon 
+	   	;

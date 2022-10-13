@@ -1,0 +1,12 @@
+//
+// Warning: This grammar is not an LL(1) grammar.
+//
+EList   :  List
+	;
+
+List    :  NAME COMMA List
+	|  NAME
+	;
+
+Useless :  LParen EList RParen
+	;
