@@ -1,22 +1,22 @@
 module Code.Lexer where
 
 
-import           Code.Grammar  (NonTerminals, Terminals (..))
+import           Code.Grammar  (GrammarTerminals (..))
 import           Control.Monad
 import           Data.Char     (isAlphaNum)
 import           Data.Foldable (traverse_)
 import           System.IO
 
 
-lexOne :: String -> Either Terminals String
-lexOne ";"       = Left Semicolon
-lexOne ":"       = Left Derives
-lexOne "|"       = Left AlsoDerives
-lexOne "epsilon" = Left Epsilon
-lexOne "Epsilon" = Left Epsilon
-lexOne "EPSILON" = Left Epsilon
+lexOne :: String -> GrammarTerminals
+lexOne ";"       = Semicolon
+lexOne ":"       = Derives
+lexOne "|"       = AlsoDerives
+lexOne "epsilon" = Epsilon
+lexOne "Epsilon" = Epsilon
+lexOne "EPSILON" = Epsilon
 lexOne sym =
-  if all isAlphaNum sym then Right sym else error $ "Cannot lex: " ++ sym
+  if all isAlphaNum sym then Symbol sym else error $ "Cannot lex: " ++ sym
 
 
 -- parse :: [Either Terminals String] -> []
