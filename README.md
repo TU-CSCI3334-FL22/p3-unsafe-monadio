@@ -140,7 +140,7 @@ The syntax for YAML maps, lists, maps of maps of lists, and maps of maps is prov
 ## Computing Next Sets
 The next set for a production  $A \rightarrow B_1 \ldots B_k$ is defined as:
 
-* If $\epsilon \in $First($B_i$) for every $1 \leq i \leq k$, then $Next(A \rightarrow B_1 \ldots B_k) = \big(\bigcup_{1 \leq i \leq k} First(B_i)\big) \cup Follow(A)$
+* If $\epsilon \in First(B_i)$ for every $1 \leq i \leq k$, then $Next(A \rightarrow B_1 \ldots B_k) = \big(\bigcup_{1 \leq i \leq k} First(B_i)\big) \cup Follow(A)$
 * Otherwise, let $B_n$ be the first symbol where $\epsilon \not \in B_i$, and  $Next(A \rightarrow B_1 \ldots B_k) = \big(\bigcup_{1 \leq i \leq n} First(B_i)\big) \setminus \\{ \epsilon \\}$.
 
 
@@ -154,7 +154,7 @@ The YAML format is very sensitive to proper spacing, so follow the format closel
 ```yaml
     map:
       key1: value1
-      key2: value2
+      key2: value2* If $\epsilon \in $First($B_i$)
 ```
 
 List is represented as `\[item1, item2, item3\]` on a single line.  Maps of maps do not require nesting indentation. Instead, they are written:
