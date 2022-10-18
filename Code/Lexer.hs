@@ -1,7 +1,7 @@
 module Code.Lexer where
 
 
-import           Code.Grammar  (GrammarTerminals (..))
+import           Code.Grammar
 import           Control.Monad
 import           Data.Char     (isAlphaNum)
 import           Data.Foldable (traverse_)
@@ -18,13 +18,18 @@ lexOne "EPSILON" = Epsilon
 lexOne sym =
   if all isAlphaNum sym then Symbol sym else error $ "Cannot lex: " ++ sym
 
-
 -- parse :: [Either Terminals String] -> []
 
+lexer :: String -> [GrammarTerminals]
+lexer = map lexOne . words
+
 process :: String -> IO ()
-process s = do
-  let split = words s
+process = traverse_ print . lexer
 
-  traverse_ (print . lexOne) split
+-- parser :: [GrammarTerminals] -> GrammarAST
+-- parser = undefined
+--   where
+--     start = parseHelper GGrammar
 
-
+-- parseHelper :: GrammarNonTerminals -> [GrammarTerminals] -> IO ()
+-- parseHelper nT

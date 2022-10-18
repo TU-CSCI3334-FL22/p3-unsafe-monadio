@@ -1,5 +1,5 @@
-module LLGen where
-import Reader
+module Code.LLGen where
+import           Code.Reader
 
 type FirstTable = [(String, [Int])]
 type FollowTable = [(NonTerminal, [Int])]
@@ -14,5 +14,5 @@ showTables = undefined
 toYaml ::  (FirstTable, FollowTable, NextTable) -> Maybe String
 toYaml = undefined
 
-fixLL :: (IR, SymbolTable, [NonTerminal])  -> (IR, SymbolTable, [NonTerminal]) 
+fixLL :: (IR, SymbolTable, [NonTerminal])  -> (IR, SymbolTable, [NonTerminal])
 fixLL = undefined
