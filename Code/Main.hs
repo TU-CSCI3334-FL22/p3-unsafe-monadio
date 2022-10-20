@@ -59,8 +59,7 @@ main = do
   if optHelp opts || fname opts == "" then helpIO
   else do
     contents <- readFile (fname opts)
-    let tokens = grammarScan contents
-        ir = grammarParse tokens
+    let ir = grammarLexAndParse contents
         improvedIR = if optRevise opts then fixLL ir else ir
         tables = makeTables improvedIR --(optWorklist opts)
       in if not $ optTable opts

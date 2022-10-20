@@ -3,7 +3,7 @@ import           Data.Foldable (traverse_)
 
 data GrammarTerminals = Semicolon | Derives | AlsoDerives | Epsilon | Symbol String deriving (Show, Eq, Ord)
 
-data GrammarNonTerminals = GGrammar | GProductionList | GProductionList' | GProductionSet | GProductionSet' | GRhs | GSymbolList deriving (Show, Eq, Ord)
+-- data GrammarNonTerminals = GGrammar | GProductionList | GProductionList' | GProductionSet | GProductionSet' | GRhs | GSymbolList deriving (Show, Eq, Ord)
 
 
 -- A -> Babc | C
@@ -36,4 +36,6 @@ nicePrintProductionSet (GrammarProductionSet (Lhs lhs) (rhs:rhsRest)) = do
 nicePrint :: GrammarAST -> IO ()
 nicePrint (AST sets) = traverse_ nicePrintProductionSet sets
 
+collectNonTerminals :: GrammarAST -> [String]
+collectNonTerminals (AST sets) = map (\(GrammarProductionSet (Lhs lhs) _) -> lhs) sets
 
