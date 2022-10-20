@@ -1,4 +1,5 @@
-import           Code.Lexer         (process)
+import           Code.Grammar       (nicePrint)
+import           Code.Lexer         (parser)
 import qualified Code.Main
 import           Code.Stuff         (test)
 import           System.Environment
@@ -10,4 +11,6 @@ main = do
   args <- getArgs
   s <- readFile $ head args
 
-  process s
+  let ast = parser s
+
+  nicePrint ast
