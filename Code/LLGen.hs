@@ -2,12 +2,25 @@ module Code.LLGen where
 import           Code.Grammar (GrammarAST)
 import           Code.Reader
 
-type FirstTable = [(String, [Int])]
-type FollowTable = [(NonTerminal, [Int])]
-type NextTable = [(Int, [Int])]
+type FirstTable = [(String, [String])]
+type FollowTable = [(NonTerminal, [String])]
+type NextTable = [(String, [String])]
 
 makeTables :: (GrammarAST, [NonTerminal]) -> (FirstTable, FollowTable, NextTable)
-makeTables = undefined
+makeTables ir = (first_table, follow_table, next_table)
+  where
+    first_table = makeFirstTable ir
+    follow_table = makeFollowTable ir first_table
+    next_table = makeNextTable ir first_table follow_table
+
+makeFirstTable :: (GrammarAST, [NonTerminal]) -> FirstTable
+makeFirstTable = undefined
+
+makeFollowTable :: (GrammarAST, [NonTerminal]) -> FirstTable -> FollowTable
+makeFollowTable = undefined
+
+makeNextTable :: (GrammarAST, [NonTerminal]) -> FirstTable -> FollowTable -> NextTable
+makeNextTable = undefined
 
 showTables ::  (FirstTable, FollowTable, NextTable) -> String
 showTables = undefined

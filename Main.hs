@@ -6,11 +6,11 @@ import           System.Environment
 
 
 main :: IO ()
--- main = Code.Main.main
-main = do
-  args <- getArgs
-  s <- readFile $ head args
+main = Code.Main.main
+-- main = do
+--   args <- getArgs
+--   s <- readFile $ head args
 
-  let ast = parser s
+--   let ast = parser s
 
-  nicePrint ast
+--   nicePrint ast

@@ -1,4 +1,5 @@
 module Code.Main where
+import           Code.Grammar          (nicePrint)
 import           Code.LLGen
 import           Code.Reader
 import           Control.Monad
@@ -9,7 +10,7 @@ import           Debug.Trace
 import           System.Console.GetOpt
 import           System.Environment
 import           System.Exit
-import           System.Random
+-- import           System.Random
 
 -- Options record
 data Options = Options {
@@ -61,7 +62,9 @@ main = do
     contents <- readFile (fname opts)
     let ir = grammarLexAndParse contents
         improvedIR = if optRevise opts then fixLL ir else ir
-        tables = makeTables improvedIR --(optWorklist opts)
+
+    nicePrint (fst ir)
+    let tables = makeTables improvedIR --(optWorklist opts)
       in if not $ optTable opts
         then putStrLn $ showTables tables
        else case toYaml tables of
