@@ -1,5 +1,6 @@
 module Code.Grammar where
-import           Data.Foldable (traverse_)
+import           Data.Foldable  (traverse_)
+import           Data.Semigroup ((<>))
 
 data GrammarTerminals = Semicolon | Derives | AlsoDerives | Epsilon | Symbol String deriving (Show, Eq, Ord)
 
