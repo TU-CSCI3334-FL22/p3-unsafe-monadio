@@ -1,8 +1,10 @@
 module Code.LLGen where
+
 import           Code.Grammar    (GrammarAST (AST), Lhs (Lhs), NonTerminal,
-                                  Rhs (Rhs), allProductions, allSymbols, padder)
+                                  Rhs (Rhs), allProductions, ProductSet (..), allSymbols, padder)
 import           Code.Reader
 import           Data.List       (intersperse, (\\))
+import Data.List
 import           Data.Map.Strict (Map, fromList, (!))
 import qualified Data.Map.Strict as Map
 import           Data.Maybe      (fromMaybe)
@@ -10,6 +12,9 @@ import           Data.Semigroup  ((<>))
 import           Data.Set        (Set)
 import qualified Data.Set        as Set
 import           Debug.Trace     (trace, traceShow, traceShowId)
+
+
+
 
 
 
@@ -93,7 +98,31 @@ makeFollowTable :: (GrammarAST, [NonTerminal]) -> FirstTable -> FollowTable
 makeFollowTable = undefined
 
 makeNextTable :: (GrammarAST, [NonTerminal]) -> FirstTable -> FollowTable -> NextTable
-makeNextTable = undefined
+makeNextTable (ast,lst) fstTbl followTbl = 
+  let ruleSets = getRules ast 
+  in map (\(l,r) -> nextOfRule l r fstTbl followTbl ) ruleSets
+
+getRules :: GrammarAST -> [(Lhs, Rhs)]
+getRules (AST ps) = concat $ map (aux) ps
+  where aux :: ProductSet -> [(Lhs,Rhs)]
+        aux (GrammarProductionSet a b ) = map (\m -> (a, m)) $ b
+
+nextOfRule :: Lhs -> Rhs -> FirstTable -> FollowTable -> (String, [String])
+nextOfRule (Lhs a) (Rhs lst) fstTbl followTbl = 
+  let firstBs = nub $ concat $ map (\x -> lookUpVal x fstTbl) lst
+  in if "" `elem` firstBs then 
+       (a, firstBs ++ (lookUpVal a followTbl))
+     else (a,firstBs)
+
+lookUpVal :: Eq a => a -> [(a,v)] ->  v
+-- lookUpVal k [] = Nothing
+lookUpVal k (x:xs) = 
+  if fst x == k then snd x -- Just (snd x)
+  else lookUpVal k xs
+
+
+
+
 
 showTables ::  (FirstTable, FollowTable, NextTable) -> String
 showTables (fstTable, _, _) = "FirstTable:\n" <> showFirstTable fstTable
