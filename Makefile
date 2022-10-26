@@ -4,11 +4,13 @@
 EXE := Main
 SRCS := $(shell find . -iname '*.hs' -type f)
 
+GRAMMAR := grammars/CEG-RR
+
 run: $(EXE)
-	./$(EXE) grammars/CEG-RR
+	./$(EXE) $(GRAMMAR)
 
 $(EXE): $(SRCS)
 	ghc Main.hs
 
 clean:
-	rm Code/*.o Code/*.hi
+	rm -f Code/*.o Code/*.hi $(EXE)

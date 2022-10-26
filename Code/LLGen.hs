@@ -9,7 +9,7 @@ import           Data.Maybe      (fromMaybe)
 import           Data.Semigroup  ((<>))
 import           Data.Set        (Set)
 import qualified Data.Set        as Set
-import           Debug.Trace     (trace)
+import           Debug.Trace     (trace, traceShow, traceShowId)
 
 
 
@@ -23,7 +23,7 @@ eof = "eof"
 fixedPoint :: Eq a => a -> (a -> a) -> a
 fixedPoint s f
   | s == s'   = s'
-  | otherwise = f s'
+  | otherwise = fixedPoint s' f
   where
     s' = f s
 
@@ -53,7 +53,7 @@ makeFirstTable (AST sets, non_term_ls) = fixedPoint start compute_once
     -- first(e) for e in NT starts at []
 
     compute_once :: FirstTable -> FirstTable
-    compute_once first_table = first_table <> Map.fromList new
+    compute_once first_table = Map.unionWith (<>) (Map.fromListWith (<>) new) first_table
       where
         -- for each prod
         new = flip map all_productions $
@@ -64,7 +64,7 @@ makeFirstTable (AST sets, non_term_ls) = fixedPoint start compute_once
 
               -- rhs = First(b_1) // { eps }
               -- b_1 is [] if its just epsilon
-              rhs = to_set_no_eps $ fromMaybe [] $ safeHead bs
+              rhs = to_set_no_eps $ fromMaybe "" $ safeHead bs
 
               -- keep leading b_is where epsilon in First(b_i)
               leading_b_i_with_epsilon = takeWhile (\bi -> elem "" $ first_table ! bi) bs
@@ -77,7 +77,7 @@ makeFirstTable (AST sets, non_term_ls) = fixedPoint start compute_once
               rhs_final = (if did_go_to_last && elem "" (first_table ! fromMaybe "" (safeLast bs)) then Set.insert "" else id) rhs_almost_final
 
 
-            in (a, (first_table ! a) <> rhs_final)
+            in (a, (first_table ! a) <> rhs_final) -- trace (a ++ " -> " ++ show rhs_final)
 
 
 safeHead :: [a] -> Maybe a
@@ -101,7 +101,7 @@ showTables (fstTable, _, _) = "FirstTable:\n" <> showFirstTable fstTable
 showFirstTable :: FirstTable -> String
 showFirstTable table = unlines rows
   where
-    adjust "" = "epsilon"
+    adjust "" = "ε"
     adjust k  = k
 
     rows = map (\(k,v) -> "\t" <> padder 20 (adjust k) <> " : " <> mconcat (intersperse ", " (map adjust $ Set.toList v)) <> "|") $ Map.toList table
