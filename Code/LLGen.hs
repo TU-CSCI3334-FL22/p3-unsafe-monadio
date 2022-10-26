@@ -20,8 +20,8 @@ import           Debug.Trace     (trace, traceShow, traceShowId)
 
 
 type FirstTable = Map String (Set String)
-type FollowTable = Map NonTerminal [String]
-type NextTable = [(String, [String])]
+type FollowTable = Map NonTerminal (Set String)
+type NextTable = Map ProductSet (Set String)
 
 eof :: String
 eof = "eof"
@@ -96,13 +96,18 @@ safeLast [a]    = Just a
 safeLast (_:ls) = safeLast ls
 
 makeFollowTable :: (GrammarAST, [NonTerminal]) -> FirstTable -> FollowTable
-makeFollowTable (AST ast, nt) first_table = undefined
+makeFollowTable (AST ast, nt) first_table = fixedPoint newLst followFixPoint
   where
-    init_map = (fromList $ [(nt', []) | nt' <- nt])
+    init_map = (fromList $ [(nt', mempty) | nt' <- nt])
     (GrammarProductionSet (Lhs top_level) lst) = head ast
-    newLst = Map.insert top_level ["eof"] init_map
+    newLst = Map.insert top_level (Set.singleton "eof") init_map
     productions = getRules (AST ast)
-    newFollowTable = foldl (\t p -> followRule p first_table t nt) newLst productions
+
+    followFixPoint :: FollowTable -> FollowTable
+    followFixPoint newLst = foldl (\t p -> followRule p first_table t nt) newLst productions
+
+
+    --newFollowTable = foldl (\t p -> followRule p first_table t nt) newLst productions
 
 
 
@@ -114,13 +119,13 @@ followRule (Lhs lhs, Rhs rhs) first_table follow_table nt = newFollowTable
               Just lst -> lst
     newFollowTable = fst $ foldr (\x b -> followAux x (snd b) first_table (fst b) nt) (follow_table, trailer) rhs
 
-followAux :: String -> [String] -> FirstTable -> FollowTable -> [NonTerminal] -> (FollowTable, [String])
-followAux rhs trailer first_table follow_table nt = if rhs `elem` nt then let newTable = Map.insertWith (++) rhs trailer follow_table
-                                                                              newTrailer = if "" `elem` firstB then trailer ++ filter (/="") firstB else firstB
+followAux :: String -> Set String -> FirstTable -> FollowTable -> [NonTerminal] -> (FollowTable, Set String)
+followAux rhs trailer first_table follow_table nt = if rhs `elem` nt then let newTable = Map.insertWith (<>) rhs trailer follow_table
+                                                                              newTrailer = if "" `elem` firstB then trailer <> Set.delete "" (firstB) else firstB
                                                                               in (newTable, newTrailer)
                                                     else  (follow_table, firstB)
   where
-    firstB = Set.toList $ case Map.lookup rhs first_table of
+    firstB = case Map.lookup rhs first_table of
                   Nothing  -> error "???"
                   Just lst -> lst
 
@@ -128,22 +133,23 @@ followAux rhs trailer first_table follow_table nt = if rhs `elem` nt then let ne
 makeNextTable :: (GrammarAST, [NonTerminal]) -> FirstTable -> FollowTable -> NextTable
 makeNextTable (ast,lst) fstTbl followTbl =
   let ruleSets = getRules ast
-  in map (\(l,r) -> nextOfRule l r fstTbl followTbl ) ruleSets
+  in Map.fromList $ map (\(l,r) -> nextOfRule l r fstTbl followTbl ) ruleSets
 
 getRules :: GrammarAST -> [(Lhs, Rhs)]
-getRules (AST ps) = concat $ map (aux) ps
+getRules (AST ps) = concatMap aux ps
   where aux :: ProductSet -> [(Lhs,Rhs)]
-        aux (GrammarProductionSet a b ) = map (\m -> (a, m)) $ b
+        aux (GrammarProductionSet a b ) = map (a,) b
 
-nextOfRule :: Lhs -> Rhs -> FirstTable -> FollowTable -> (String, [String])
+nextOfRule :: Lhs -> Rhs -> FirstTable -> FollowTable -> (ProductSet, Set String)
 nextOfRule (Lhs a) (Rhs lst) fstTbl followTbl =
-  let firstBs = map (\x -> Set.toList $ lookUpVal x fstTbl) lst
+  let production = GrammarProductionSet (Lhs a) [Rhs lst]
+      firstBs = map (`lookUpVal` fstTbl) lst
   in if all (\x -> "" `elem` x) firstBs then
-       (a, nub $ (concat firstBs) ++ (lookUpVal a followTbl))
+       (production, mconcat firstBs <> lookUpVal a followTbl)
      else let legitFirstBs = snd $ foldl (\x y -> if fst x then
-                                                     ("" `elem` y, snd x ++ y)
-                                                  else x) (True,[]) firstBs
-      in (a,nub $ filter (/="") legitFirstBs)
+                                                     ("" `elem` y, snd x <> y)
+                                                  else x) (True, Set.empty) firstBs
+      in (production, Set.delete "" legitFirstBs)
 
 lookUpVal :: (Eq a, Ord a) => a -> Map a v ->  v
 lookUpVal = flip (!)
@@ -164,7 +170,7 @@ showFollowTable table = unlines rows
     adjust "" = "ε"
     adjust k  = k
 
-    rows = map (\(k,v) -> "\t" <> padder 20 (adjust k) <> " : " <> mconcat (intersperse ", " (map adjust v)) <> "|") $ Map.toList table
+    rows = map (\(k,v) -> "\t" <> padder 20 (adjust k) <> " : " <> mconcat (intersperse ", " (map adjust  $ Set.toList v)) <> "|") $ Map.toList table
 
 
 showFirstTable :: FirstTable -> String
