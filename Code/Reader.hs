@@ -1,10 +1,8 @@
 module Code.Reader where
 
-import           Code.Grammar (GrammarAST, collectNonTerminals)
+import           Code.Grammar (GrammarAST, NonTerminal, collectNonTerminals)
 import           Code.Lexer
 
-type Terminal = String
-type NonTerminal = String
 -- type SymbolTable = [(String, Int)] --Map of strings to ints
 data Token = Undefined
 

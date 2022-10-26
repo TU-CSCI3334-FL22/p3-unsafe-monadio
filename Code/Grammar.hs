@@ -1,6 +1,11 @@
+{-# LANGUAGE TupleSections #-}
 module Code.Grammar where
 import           Data.Foldable  (traverse_)
 import           Data.Semigroup ((<>))
+import           Data.Set       (Set, fromList)
+
+type Terminal = String
+type NonTerminal = String
 
 data GrammarTerminals = Semicolon | Derives | AlsoDerives | Epsilon | Symbol String deriving (Show, Eq, Ord)
 
@@ -16,6 +21,14 @@ newtype Rhs = Rhs [String] deriving (Show, Eq, Ord)
 newtype Lhs = Lhs String deriving (Show, Eq, Ord)
 newtype GrammarAST =
   AST [ProductSet] deriving (Show, Eq, Ord)
+
+allSymbols :: GrammarAST -> Set String
+allSymbols (AST sets) = foldMap (\(GrammarProductionSet (Lhs lhs) rhs_ls) -> fromList $ lhs:foldMap (\(Rhs ls) -> ls) rhs_ls) sets
+
+allProductions :: GrammarAST -> [(Lhs, Rhs)]
+allProductions (AST sets) = do
+  (GrammarProductionSet lhs rhs_ls) <- sets
+  map (lhs,) rhs_ls
 
 
 padder :: Int -> String -> String
