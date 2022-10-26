@@ -4,8 +4,7 @@ module Code.LLGen where
 import           Code.Grammar    (GrammarAST (AST), Lhs (Lhs), NonTerminal,
                                   ProductSet (..), Rhs (Rhs), allProductions,
                                   allSymbols, padder)
-import           Code.Reader
-import           Data.List
+import           Data.Bifunctor  (Bifunctor (bimap))
 import           Data.List       (intersperse, (\\))
 import           Data.Map.Strict (Map, fromList, (!))
 import qualified Data.Map.Strict as Map
@@ -163,7 +162,15 @@ lookUpVal = flip (!)
 
 
 showTables ::  (FirstTable, FollowTable, NextTable) -> String
-showTables (fstTable, followTable, _) = "FirstTable:\n" <> showFirstTable fstTable <> "\n\nFollow Table:\n" <> showFollowTable followTable
+showTables (fstTable, followTable, nextTable) = "FirstTable:\n" <> showFirstTable fstTable <> "\n\nFollow Table:\n" <> showFollowTable followTable <> "\n\nNext Table:\n" <> showNextTable nextTable
+
+showNextTable :: NextTable -> String
+showNextTable table = unlines rows
+  where
+    showPS :: ProductSet -> String
+    showPS (GrammarProductionSet (Lhs lhs) ((Rhs rhs):_)) = lhs ++ " -> " ++ (case rhs of [] -> "ε"; ls -> unwords ls)
+
+    rows = map ((\(a,b) -> padder 30 a <> " : " <> b) . bimap showPS (unwords . Set.toList)) $ Map.toList table
 
 showFollowTable :: FollowTable -> String
 showFollowTable table = unlines rows
@@ -172,7 +179,6 @@ showFollowTable table = unlines rows
     adjust k  = k
 
     rows = map (\(k,v) -> "\t" <> padder 20 (adjust k) <> " : " <> mconcat (intersperse ", " (map adjust  $ Set.toList v)) <> "|") $ Map.toList table
-
 
 showFirstTable :: FirstTable -> String
 showFirstTable table = unlines rows
