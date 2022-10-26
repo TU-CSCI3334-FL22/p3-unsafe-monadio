@@ -25,7 +25,7 @@
 | 2   | ProductionList             | SYMBOL                  |
 | 3   | ProductionList'            | SYMBOL, $\epsilon$      |
 | 4   | ProductionSet              | SYMBOL                  |
-| 5   | ProductionSet'             | ALSODERIVS,$\epsilon$   |
+| 5   | ProductionSet'             | ALSODERIVS, $\epsilon$  |
 | 6   | Rhs                        | SYMBOL, EPSILON.        |
 | 7   | SymbolList                 | SYMBOL                  |
 | 8   | SymbolList'                | SYMBOL, $\epsilon$      |
