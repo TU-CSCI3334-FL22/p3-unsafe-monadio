@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 module Code.LLGen where
 
 import           Code.Grammar    (GrammarAST (AST), Lhs (Lhs), NonTerminal,
