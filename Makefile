@@ -10,7 +10,7 @@ run: $(EXE)
 	./$(EXE) $(GRAMMAR)
 
 $(EXE): $(SRCS)
-	ghc Main.hs
+	ghc Main.hs -o $(EXE)
 
 clean:
 	rm -f Code/*.o Code/*.hi $(EXE)
