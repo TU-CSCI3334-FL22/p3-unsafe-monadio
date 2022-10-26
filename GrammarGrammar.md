@@ -15,63 +15,68 @@
 | 11  | SymbolList'     | &rarr; | $\epsilon$                              |
 | 12  |                 | \|     | SymbolList                              |
 
-## EVERYTHING BELOW IS WRONG
-
-## Follow
-
-|     |                 |                       |
-| --- | --------------- | --------------------- |
-| 1   | Grammar         | EOF                   |
-| 2   | ProductionList  | EOF                   |
-| 3   | ProductionList' | EOF                   |
-| 4   | ProductionSet   | SEMICOLON             |
-| 5   | ProductionSet'  | SEMICOLON             |
-| 6   | Rhs             | ALSODERIVS, SEMICOLON |
-| 7   | SymbolList      | ALSODERIVS, SEMICOLON |
-
+## EVERYTHING BELOW IS fixed
 
 ## First
 
-|     |                 |                     |
-| --- | --------------- | ------------------- |
-| 1   | Grammar         | SYMBOL              |
-| 2   | ProductionList  | SYMBOL              |
-| 3   | ProductionList' | SYMBOL, EPSILON     |
-| 4   | ProductionSet   | SYMBOL              |
-| 5   | ProductionSet'  | ALSODERIVS, EPSILON |
-| 6   | Rhs             | SYMBOL, EPSILON     |
-| 7   | SymbolList      | SYMBOL              |
+|     |  Nonterminal/Termial       |  First                  |
+| --- | -------------------------- | ------------------------|
+| 1   | Grammar                    | SYMBOL                  |
+| 2   | ProductionList             | SYMBOL                  |
+| 3   | ProductionList'            | SYMBOL, $\epsilon$      |
+| 4   | ProductionSet              | SYMBOL                  |
+| 5   | ProductionSet'             | ALSODERIVS,$\epsilon$   |
+| 6   | Rhs                        | SYMBOL, EPSILON.        |
+| 7   | SymbolList                 | SYMBOL                  |
+| 8   | SymbolList'                | $\epsilon$              |
 
 The first of a terminal is itself
 
+## Follow
+
+|     | Nonterminal     |  Follow                          |
+| --- | --------------- | -------------------------------- |
+| 1   | Grammar         | EOF                              |
+| 2   | ProductionList  | EOF                              |
+| 3   | ProductionList' | EOF                              |
+| 4   | ProductionSet   | SEMICOLON                        |
+| 5   | ProductionSet'  | SEMICOLON                        |
+| 6   | Rhs             | SEMICOLON, ALSODERIVS,$\epsilon$ |
+| 7   | SymbolList      | SEMICOLON, ALSODERIVS,$\epsilon$ |
+| 8   | SymbolList'     | SEMICOLON, ALSODERIVS,$\epsilon$ |
+
+
+
 <!--
 ## Next
-|     |                 |                       |
-| --- | --------------- | --------------------- |
-| 1   | Grammar         | SYMBOL                |
-| 2   | ProductionList  | SYMBOL                |
-| 3   | ProductionList' | SYMBOL, EOF           |
-| 4   |                 | EOF                   |
-| 5   | ProductionSet   | SYMBOL                |
-| 6   | ProductionSet'  | ALSODERIVS            |
-| 7   |                 | SEMICOLON             |
-| 8   | Rhs             | SYMBOL                |
-| 9   |                 | ALSODERIVS, SEMICOLON |
-| 10  | SymbolList      | SYMBOL                |
-| 11  |                 | SYMBOL                |
+| Rule |                 |  Next                 |
+| ---- | --------------- | --------------------- |
+| 1    | Grammar         | SYMBOL                |
+| 2    | ProductionList  | SYMBOL                |
+| 3    | ProductionList' | SYMBOL                |
+| 4    |                 | EOF                   |
+| 5    | ProductionSet   | SYMBOL                |
+| 6    | ProductionSet'  | ALSODERIVS            |
+| 7    |                 | SEMICOLON             |
+| 8    | Rhs             | SYMBOL                |
+| 9    |                 | EPSILON               |
+| 10   | SymbolList      | SYMBOL                |
+| 11   | SymbolList'     |                       |
+| 12   |                 | SEMICOLON, ALSODERIVS |
 -->
 ???
 
 ## Predict table
-|                 | Semicolon | Derives | AlsoDerives | Symbol | EOF |
-| --------------- | --------- | ------- | ----------- | ------ | --- |
-| Grammar         |           |         |             | 1      |     |
-| ProductionList  |           |         |             | 2      |     |
-| ProductionList' |           |         |             | 3      | 4   |
-| ProductionSet   |           |         |             | 5      |     |
-| ProductionSet'  | 7         |         | 6           |        |     |
-| Rhs             |           |         |             | 8      |     |
-| SymbolList      |           |         |             |        |     |
+|                 | Semicolon | Derives | AlsoDerives | Symbol | EPSILON | EOF |
+| --------------- | --------- | ------- | ----------- | ------ | ------- | --- |
+| Grammar         |           |         |             | 1      |         |     |
+| ProductionList  |           |         |             | 2      |         |     |
+| ProductionList' |           |         |             | 3      |         | 4   |
+| ProductionSet   |           |         |             | 5      |         |     |
+| ProductionSet'  | 7         |         | 6           |        |         |     |
+| Rhs             |           |         |             | 8      | 9       |     |
+| SymbolList      |           |         |             |        |         |     |
+| SymbolList'     | 11        |         | 11          |        |         |     |
 
 
 
