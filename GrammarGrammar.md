@@ -28,7 +28,7 @@
 | 5   | ProductionSet'             | ALSODERIVS,$\epsilon$   |
 | 6   | Rhs                        | SYMBOL, EPSILON.        |
 | 7   | SymbolList                 | SYMBOL                  |
-| 8   | SymbolList'                | $\epsilon$              |
+| 8   | SymbolList'                | SYMBOL, $\epsilon$      |
 
 The first of a terminal is itself
 
@@ -41,28 +41,28 @@ The first of a terminal is itself
 | 3   | ProductionList' | EOF                              |
 | 4   | ProductionSet   | SEMICOLON                        |
 | 5   | ProductionSet'  | SEMICOLON                        |
-| 6   | Rhs             | SEMICOLON, ALSODERIVS,$\epsilon$ |
-| 7   | SymbolList      | SEMICOLON, ALSODERIVS,$\epsilon$ |
-| 8   | SymbolList'     | SEMICOLON, ALSODERIVS,$\epsilon$ |
+| 6   | Rhs             | SEMICOLON, ALSODERIVS            |
+| 7   | SymbolList      | SEMICOLON, ALSODERIVS            |
+| 8   | SymbolList'     | SEMICOLON, ALSODERIVS            |
 
 
 
 <!--
 ## Next
-| Rule |                 |  Next                 |
-| ---- | --------------- | --------------------- |
-| 1    | Grammar         | SYMBOL                |
-| 2    | ProductionList  | SYMBOL                |
-| 3    | ProductionList' | SYMBOL                |
-| 4    |                 | EOF                   |
-| 5    | ProductionSet   | SYMBOL                |
-| 6    | ProductionSet'  | ALSODERIVS            |
-| 7    |                 | SEMICOLON             |
-| 8    | Rhs             | SYMBOL                |
-| 9    |                 | EPSILON               |
-| 10   | SymbolList      | SYMBOL                |
-| 11   | SymbolList'     |                       |
-| 12   |                 | SEMICOLON, ALSODERIVS |
+| Rule |                 |  Next                             |
+| ---- | --------------- | --------------------------------- |
+| 1    | Grammar         | SYMBOL                            |
+| 2    | ProductionList  | SYMBOL                            |
+| 3    | ProductionList' | SYMBOL                            |
+| 4    |                 | $\epsilon$, EOF                   |
+| 5    | ProductionSet   | SYMBOL                            |
+| 6    | ProductionSet'  | ALSODERIVS                        |
+| 7    |                 | $\epsilon$, SEMICOLON             |
+| 8    | Rhs             | SYMBOL                            |
+| 9    |                 | EPSILON                           |
+| 10   | SymbolList      | SYMBOL                            |
+| 11   | SymbolList'     | SYMBOL                            |
+| 12   |                 | $\epsilon$, SEMICOLON, ALSODERIVS |
 -->
 ???
 
@@ -75,8 +75,8 @@ The first of a terminal is itself
 | ProductionSet   |           |         |             | 5      |         |     |
 | ProductionSet'  | 7         |         | 6           |        |         |     |
 | Rhs             |           |         |             | 8      | 9       |     |
-| SymbolList      |           |         |             |        |         |     |
-| SymbolList'     | 11        |         | 11          |        |         |     |
+| SymbolList      |           |         |             | 10     |         |     |
+| SymbolList'     | 12        |         | 12          | 11     |         |     |
 
 
 
