@@ -7,7 +7,7 @@ SRCS := $(shell find . -iname '*.hs' -type f)
 GRAMMAR := grammars/CEG-RR
 
 run: $(EXE)
-	./$(EXE) $(GRAMMAR)
+	./$(EXE) -t $(GRAMMAR)
 
 $(EXE): $(SRCS)
 	ghc Main.hs -o $(EXE)

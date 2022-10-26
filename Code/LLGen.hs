@@ -1,18 +1,31 @@
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections     #-}
 module Code.LLGen where
 
-import           Code.Grammar    (GrammarAST (AST), Lhs (Lhs), NonTerminal,
-                                  ProductSet (..), Rhs (Rhs), allProductions,
-                                  allSymbols, padder)
-import           Data.Bifunctor  (Bifunctor (bimap))
-import           Data.List       (intersperse, (\\))
-import           Data.Map.Strict (Map, fromList, (!))
-import qualified Data.Map.Strict as Map
-import           Data.Maybe      (fromMaybe)
-import           Data.Semigroup  ((<>))
-import           Data.Set        (Set)
-import qualified Data.Set        as Set
-import           Debug.Trace     (trace, traceShow, traceShowId)
+import           Code.Grammar                      (GrammarAST (AST), Lhs (Lhs),
+                                                    NonTerminal,
+                                                    ProductSet (..), Rhs (Rhs),
+                                                    allProductions, allSymbols,
+                                                    padder)
+import           Control.Monad.Trans.Writer.Strict
+
+
+import           Data.Bifunctor                    (Bifunctor (bimap))
+import           Data.Foldable                     (sequenceA_, traverse_)
+import           Data.List                         (intercalate, intersperse,
+                                                    (\\))
+import           Data.Map.Strict                   (Map, fromList, (!))
+import qualified Data.Map.Strict                   as Map
+import           Data.Maybe                        (fromMaybe)
+import           Data.Semigroup                    ((<>))
+import           Data.Set                          (Set)
+import qualified Data.Set                          as Set
+import           Data.String                       (IsString (fromString))
+import           Debug.Trace                       (trace, traceShow,
+                                                    traceShowId)
+
+
 
 
 
@@ -188,8 +201,94 @@ showFirstTable table = unlines rows
 
     rows = map (\(k,v) -> "\t" <> padder 20 (adjust k) <> " : " <> mconcat (intersperse ", " (map adjust $ Set.toList v)) <> "|") $ Map.toList table
 
-toYaml ::  (FirstTable, FollowTable, NextTable) -> Maybe String
-toYaml = undefined
+
+type YamlWriter = Writer [String]
+-- data YamlWriter a = Content String a deriving (Show, Eq, Ord)
+-- instance Functor YamlWriter where
+--   fmap f (Content s a) = Content s $ f a
+-- instance Applicative YamlWriter where
+--   (Content s f) <*> (Content s' a) = Content (s <> s') (f a)
+--   pure a = Content "" a
+-- instance Monad YamlWriter where
+--   (Content s a) >>= f = Content (s <> s') b
+--     where
+--       (Content s' b) = f a
+
+
+keyEntry :: String -> String -> YamlWriter ()
+keyEntry key val = tell [key ++ ": " ++ val]
+
+keyEntryMany :: String -> YamlWriter () -> YamlWriter ()
+keyEntryMany key values = do
+  tell [key ++ ":"]
+  tell $ map ("  "<>) $ execWriter values
+
+tellOne = tell . (:[])
+
+
+-- class ToYaml a where
+--   toYaml :: a -> YamlWriter ()
+
+-- instance ToYaml Int where
+--   toYaml = tell . (:[]) . show
+
+-- instance {-# OVERLAPS #-} ToYaml String where
+--   toYaml = tell . (:[])
+
+-- instance {-# OVERLAPPABLE #-} ToYaml a => ToYaml [a] where
+--   toYaml ls = do
+--     let
+--       inner = execWriter $ traverse_ toYaml ls
+--       is_long = any ((>= 2) . length) inner
+
+--     if is_long then
+--       undefined
+--     else
+--       tell ["[" ++ intersperse ", " (map head inner) ++ "]"] -- (sequenceA_ $ intersperse ", " $ )
+
+lsToYaml :: [String] -> String
+lsToYaml ls = "[" ++ intercalate ", " ls ++ "]"
+
+singletonMapToYaml :: String -> String -> String
+singletonMapToYaml k v = "{" ++ k ++ ": " ++ v ++ "}"
+
+-- instance ToYaml a => ToYaml (Set a) where
+--   toYaml = toYaml . Set.toList
+
+-- instance ToYaml (YamlWriter ()) where
+--   toYaml = id
+
+
+-- toYaml ::  (FirstTable, FollowTable, NextTable) -> Maybe String
+-- toYaml = undefined
 
 fixLL :: (GrammarAST, [NonTerminal])  -> (GrammarAST, [NonTerminal])
 fixLL = undefined
+
+toYamlAll :: (GrammarAST, [NonTerminal]) -> (FirstTable, FollowTable, NextTable) -> Maybe String
+toYamlAll (AST ast, nts) (fstTable, followTable, nextTable) = pure $ unlines $ execWriter $ do
+  let
+    non_terms = Set.fromList nts
+    all_symbols = allSymbols $ AST ast
+    terms = Set.difference all_symbols non_terms
+    terms_with_eof_e = Set.insert eof $ Set.insert "ε" terms -- epsilon is ""
+
+    (GrammarProductionSet (Lhs top_level) _) = head ast
+
+    all_productions = allProductions $ AST ast
+
+    association_list_to_yaml :: [(Lhs, Rhs)] -> YamlWriter ()
+    association_list_to_yaml ls = traverse_ (\(n, (Lhs lhs, Rhs rhs)) -> keyEntry n $ singletonMapToYaml lhs $ lsToYaml rhs) ls_enum
+      where
+        ls_enum = zip (map show [1..]) ls
+
+  tellOne "\n"
+  keyEntry "terminals" $ lsToYaml $ Set.toList terms_with_eof_e
+  keyEntry "non-terminals" $ lsToYaml nts
+  keyEntry "eof-marker" eof
+  keyEntry "error-marker" "--"
+  keyEntry "start-symbol" top_level
+  keyEntryMany "productions" $ association_list_to_yaml all_productions
+  keyEntry "table" "idk"
+
+

@@ -67,6 +67,6 @@ main = do
     let tables = makeTables improvedIR --(optWorklist opts)
       in if not $ optTable opts
         then putStrLn $ showTables tables
-       else case toYaml tables of
+       else case toYamlAll ir tables of
           Nothing  -> error "Not LL(1)"
           Just str -> putStrLn str
