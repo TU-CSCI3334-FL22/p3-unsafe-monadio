@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 module Code.Grammar where
 import           Data.Foldable  (traverse_)
 import           Data.Semigroup ((<>))
@@ -23,6 +24,11 @@ newtype GrammarAST =
 
 allSymbols :: GrammarAST -> Set String
 allSymbols (AST sets) = foldMap (\(GrammarProductionSet (Lhs lhs) rhs_ls) -> fromList $ lhs:foldMap (\(Rhs ls) -> ls) rhs_ls) sets
+
+allProductions :: GrammarAST -> [(Lhs, Rhs)]
+allProductions (AST sets) = do
+  (GrammarProductionSet lhs rhs_ls) <- sets
+  map (lhs,) rhs_ls
 
 
 padder :: Int -> String -> String
