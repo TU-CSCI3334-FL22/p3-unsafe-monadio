@@ -54,6 +54,22 @@ makeTables ir = (first_table, follow_table, next_table)
     follow_table = makeFollowTable ir first_table
     next_table = makeNextTable ir first_table follow_table
 
+type PredictTable = Map NonTerminal (Set (Int,String))
+-- type NextTable = Map ProductSet (Set Terminal::String)
+makePredictTable :: (GrammarAST, [NonTerminal]) -> NextTable -> PredictTable
+makePredictTable (ast, nts) nextTable =
+  let index2productions = zip [0..] $ map (\(a,b) -> GrammarProductionSet a [b]) $ getRules ast
+      -- inde2productions = [(Int, ProductSet)]
+      -- emptyTable = map (\nt -> (nt, Set.empty )) nts 
+      predictTable = foldl (\predT nextRule -> let (GrammarProductionSet (Lhs key) a) = fst nextRule
+                                                   index = fst $ head $ filter (\x -> snd x ==  fst nextRule) index2productions
+                                                   newElem = let terminals = Set.toList $ snd nextRule
+                                                             in Set.fromList $ zip (repeat index ) terminals
+                                               in Map.insertWith (<>) key newElem predT ) mempty $ Map.toList nextTable
+  in predictTable
+  -- where aux :: PredictTable -> a -> b
+  --       aux predictTable (ProductSet l) 
+
 
 makeFirstTable :: (GrammarAST, [NonTerminal]) -> FirstTable
 makeFirstTable (AST sets, non_term_ls) = fixedPoint start compute_once
