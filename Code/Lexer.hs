@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Code.Lexer where
 
 
@@ -24,8 +25,7 @@ lexOne sym =
 -- parse :: [Either Terminals String] -> []
 
 addSpacesToSemicolon :: String -> String
-addSpacesToSemicolon s =
-  s >>= \c -> if c == ';' then " ; " else [c]
+addSpacesToSemicolon = (>>= \case ';' -> " ; "; c -> [c])
 
 lexer :: String -> [GrammarTerminals]
 lexer = map lexOne . words . addSpacesToSemicolon
