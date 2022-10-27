@@ -11,6 +11,7 @@ import           Code.Grammar                      (GrammarAST (AST), Lhs (Lhs),
 import           Control.Monad.Trans.Writer.Strict
 
 
+import           Control.Arrow                     (Arrow ((&&&)))
 import           Data.Bifunctor                    (Bifunctor (bimap))
 import           Data.Foldable                     (sequenceA_, traverse_)
 import           Data.List                         (intercalate, intersperse,
@@ -65,9 +66,9 @@ makeFirstTable (AST sets, non_term_ls) = fixedPoint start compute_once
 
     all_productions = allProductions $ AST sets
 
-    first_terms = fromList $ map (\a -> (a,Set.singleton a)) $ Set.toList terms_with_eof_e
+    first_terms = Map.fromSet Set.singleton terms_with_eof_e
 
-    start = first_terms <> fromList ([(nt, mempty) | nt <- non_term_ls])
+    start = first_terms <> Map.fromSet mempty non_terms
 
     -- first(e) for e in NT starts at []
 
@@ -86,7 +87,7 @@ makeFirstTable (AST sets, non_term_ls) = fixedPoint start compute_once
               rhs = to_set_no_eps $ fromMaybe "" $ safeHead bs
 
               -- keep leading b_is where epsilon in First(b_i)
-              leading_b_i_with_epsilon = takeWhile (\bi -> elem "" $ first_table ! bi) bs
+              leading_b_i_with_epsilon = takeWhile (elem "" . (first_table !)) bs
 
               rhs_almost_final = rhs <> foldMap to_set_no_eps leading_b_i_with_epsilon
 
@@ -111,7 +112,7 @@ safeLast (_:ls) = safeLast ls
 makeFollowTable :: (GrammarAST, [NonTerminal]) -> FirstTable -> FollowTable
 makeFollowTable (AST ast, nt) first_table = fixedPoint newLst followFixPoint
   where
-    init_map = (fromList $ [(nt', mempty) | nt' <- nt])
+    init_map = fromList $ map (,mempty) nt
     (GrammarProductionSet (Lhs top_level) lst) = head ast
     newLst = Map.insert top_level (Set.singleton "eof") init_map
     productions = getRules (AST ast)
