@@ -23,8 +23,12 @@ lexOne sym =
 
 -- parse :: [Either Terminals String] -> []
 
+addSpacesToSemicolon :: String -> String
+addSpacesToSemicolon s =
+  s >>= \c -> if c == ';' then " ; " else [c]
+
 lexer :: String -> [GrammarTerminals]
-lexer = map lexOne . words
+lexer = map lexOne . words . addSpacesToSemicolon
 
 parser :: String -> GrammarAST
 parser = parseGrammarGrammar . lexer

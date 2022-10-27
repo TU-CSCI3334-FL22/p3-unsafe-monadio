@@ -11,7 +11,7 @@ import           Code.Grammar                      (GrammarAST (AST), Lhs (Lhs),
 import           Control.Monad.Trans.Writer.Strict
 
 
-import           Control.Arrow                     (Arrow ((&&&)))
+import           Control.Arrow                     (Arrow (second, (&&&)))
 import           Data.Bifunctor                    (Bifunctor (bimap))
 import           Data.Foldable                     (sequenceA_, traverse_)
 import           Data.List                         (intercalate, intersperse,
@@ -23,6 +23,7 @@ import           Data.Semigroup                    ((<>))
 import           Data.Set                          (Set)
 import qualified Data.Set                          as Set
 import           Data.String                       (IsString (fromString))
+import           Data.Tuple                        (swap)
 import           Debug.Trace                       (trace, traceShow,
                                                     traceShowId)
 
@@ -36,6 +37,7 @@ import           Debug.Trace                       (trace, traceShow,
 type FirstTable = Map String (Set String)
 type FollowTable = Map NonTerminal (Set String)
 type NextTable = Map ProductSet (Set String)
+type PredictTable = Map NonTerminal (Set (Int,String))
 
 eof :: String
 eof = "eof"
@@ -54,13 +56,12 @@ makeTables ir = (first_table, follow_table, next_table)
     follow_table = makeFollowTable ir first_table
     next_table = makeNextTable ir first_table follow_table
 
-type PredictTable = Map NonTerminal (Set (Int,String))
 -- type NextTable = Map ProductSet (Set Terminal::String)
 makePredictTable :: (GrammarAST, [NonTerminal]) -> NextTable -> PredictTable
 makePredictTable (ast, nts) nextTable =
   let index2productions = zip [0..] $ map (\(a,b) -> GrammarProductionSet a [b]) $ getRules ast
       -- inde2productions = [(Int, ProductSet)]
-      -- emptyTable = map (\nt -> (nt, Set.empty )) nts 
+      -- emptyTable = map (\nt -> (nt, Set.empty )) nts
       predictTable = foldl (\predT nextRule -> let (GrammarProductionSet (Lhs key) a) = fst nextRule
                                                    index = fst $ head $ filter (\x -> snd x ==  fst nextRule) index2productions
                                                    newElem = let terminals = Set.toList $ snd nextRule
@@ -68,7 +69,7 @@ makePredictTable (ast, nts) nextTable =
                                                in Map.insertWith (<>) key newElem predT ) mempty $ Map.toList nextTable
   in predictTable
   -- where aux :: PredictTable -> a -> b
-  --       aux predictTable (ProductSet l) 
+  --       aux predictTable (ProductSet l)
 
 
 makeFirstTable :: (GrammarAST, [NonTerminal]) -> FirstTable
@@ -269,6 +270,9 @@ lsToYaml ls = "[" ++ intercalate ", " ls ++ "]"
 singletonMapToYaml :: String -> String -> String
 singletonMapToYaml k v = "{" ++ k ++ ": " ++ v ++ "}"
 
+mapToYaml :: Show a => [(String, a)] -> String
+mapToYaml ls = "{" ++ intercalate ", " (map (\(a,b) -> a ++ ": " ++ show b) ls) ++ "}"
+
 -- instance ToYaml a => ToYaml (Set a) where
 --   toYaml = toYaml . Set.toList
 
@@ -294,18 +298,38 @@ toYamlAll (AST ast, nts) (fstTable, followTable, nextTable) = pure $ unlines $ e
 
     all_productions = allProductions $ AST ast
 
+    predict_table = is_LL1 $ makePredictTable (AST ast, nts) nextTable
+
+    is_LL1 :: PredictTable -> Either String PredictTable
+    is_LL1 predict_map = traverse check predict_map
+      where
+        check :: Set (Int, String) -> Either String (Set (Int, String))
+        check set = case Map.toList duplicates of
+          [] -> Right set
+          ls -> Left $ show ls
+          where
+            x = Map.fromListWith (<>) $ map (second (:[]) . swap) $ Set.toList set
+            duplicates = Map.filter ((>1) . length) x
+
     association_list_to_yaml :: [(Lhs, Rhs)] -> YamlWriter ()
     association_list_to_yaml ls = traverse_ (\(n, (Lhs lhs, Rhs rhs)) -> keyEntry n $ singletonMapToYaml lhs $ lsToYaml rhs) ls_enum
       where
-        ls_enum = zip (map show [1..]) ls
+        ls_enum = zip (map show [0..]) ls
+
+    predict_table_to_yaml :: [(NonTerminal, Set (Int, String))] -> YamlWriter ()
+    predict_table_to_yaml set = traverse_ (\(nt, set) -> keyEntry nt $ mapToYaml $ map swap $ Set.toList set) set
+
 
   tellOne "\n"
-  keyEntry "terminals" $ lsToYaml $ Set.toList terms_with_eof_e
+  keyEntry "terminals" $ lsToYaml $ Set.toList terms
   keyEntry "non-terminals" $ lsToYaml nts
   keyEntry "eof-marker" eof
   keyEntry "error-marker" "--"
   keyEntry "start-symbol" top_level
   keyEntryMany "productions" $ association_list_to_yaml all_productions
-  keyEntry "table" "idk"
+
+  case predict_table of
+    Left err -> tell ["Error: Not LL(1)", err]
+    Right predict_table -> keyEntryMany "table" $ predict_table_to_yaml $ Map.toList predict_table
 
 

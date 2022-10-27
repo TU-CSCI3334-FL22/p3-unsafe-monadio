@@ -4,7 +4,7 @@
 EXE := Main
 SRCS := $(shell find . -iname '*.hs' -type f)
 
-GRAMMAR := grammars/CEG-RR
+GRAMMAR := grammars/SN-nonLL1-RR
 
 run: $(EXE)
 	./$(EXE) -t $(GRAMMAR)
