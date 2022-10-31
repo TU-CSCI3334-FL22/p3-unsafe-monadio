@@ -1,8 +1,9 @@
 module Code.Main where
-import           Code.Grammar          (nicePrint)
+import           Code.Grammar               (nicePrint)
 import           Code.LLGen
 import           Code.Reader
 import           Control.Monad
+import           Control.Monad.Trans.Except (runExcept)
 import           Data.Char
 import           Data.List
 import           Data.Maybe
@@ -60,8 +61,14 @@ main = do
   if optHelp opts || fname opts == "" then helpIO
   else do
     contents <- readFile (fname opts)
-    let ir = grammarLexAndParse contents
-        improvedIR = if optRevise opts then fixLL ir else ir
+    ir <- case runExcept $ grammarLexAndParse contents of
+      Right ir -> pure ir
+      Left fail_reason -> do
+        putStrLn "Error"
+        putStrLn fail_reason
+        exitFailure
+
+    let improvedIR = if optRevise opts then fixLL ir else ir
 
     nicePrint (fst ir)
     let tables = makeTables improvedIR --(optWorklist opts)
