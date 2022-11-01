@@ -11,6 +11,7 @@ for g in grammars:
     if 'nonLL1' in str(g) or 'invalid' in str(g):
         print(f'Skipping {str(g)}')
         continue
+    print(f'-----{str(g)}')
 
     run(f'./llgen -w {str(g)} > w.out', shell=True).check_returncode()
     run(f'./llgen {str(g)} > nw.out', shell=True).check_returncode()
