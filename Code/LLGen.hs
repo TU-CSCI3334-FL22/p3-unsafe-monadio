@@ -195,6 +195,10 @@ safeLast (_:ls) = safeLast ls
 makeFollowTableW :: (GrammarAST, [NonTerminal]) -> FirstTable -> FollowTable
 makeFollowTableW (AST ast, nt) first_table = snd $ followFixPointW (Map.keysSet all_productions, newLst)
   where
+    -- extract values from list of keys
+    (!:?<>@$%%) :: (Show k, Ord k, Ord v) => Map k (Set v) -> [k] -> Set v
+    m !:?<>@$%% ks = foldl (\s k -> s `Set.union` (m !:?<>@$% k) ) mempty ks  
+        
     init_map = fromList $ map (,mempty) nt
     (GrammarProductionSet (Lhs top_level) lst) = head ast
     newLst = Map.insert top_level (Set.singleton "eof") init_map
@@ -207,14 +211,13 @@ makeFollowTableW (AST ast, nt) first_table = snd $ followFixPointW (Map.keysSet 
 
     nt_to_prod_map :: Map NonTerminal (Set Int)
     -- For Follow : Follow(A) `union` U First(B_i) for i = 0 .. n where n is first B that does not contain epsilon
-    -- but first(B_i) no longer change so it just need update when follow(A) change
-
-    nt_to_prod_map = Map.fromListWith (<>) (concatMap (\(k, (Lhs lhs, Rhs rhs)) ->
-      let
-        referenced_nts = [lhs] -- nubSort $ takeWhile (not . (`Set.member` terms)) rhs
-      in map (,Set.singleton k) referenced_nts)
-      $ Map.toList all_productions) <> Map.fromSet (const mempty) non_terms
-
+    -- Follow(A) change means that production and any productions start with any nonterminal B_i are back to workList.
+    nt_to_prod_map = 
+      let followAtoProds = Map.fromListWith (<>) (concatMap (\(k, (Lhs lhs, Rhs rhs)) -> let referenced_nts = [lhs] ++ filter (`elem` nt) rhs in map (,Set.singleton k) referenced_nts) $ Map.toList all_productions) <> Map.fromSet (const mempty) non_terms
+      in foldl (\theMap (k, (Lhs lhs, Rhs rhs)) -> 
+        let ntRhs = filter (`elem` nt) rhs
+            rhsProductions = followAtoProds !:?<>@$%% ntRhs
+        in Map.insertWith (<>) lhs  rhsProductions theMap ) followAtoProds $ Map.toList all_productions
 
     followFixPointW :: (Set Int, FollowTable) -> (Set Int, FollowTable)
     followFixPointW (wkLst,follow_table) 
@@ -225,15 +228,12 @@ makeFollowTableW (AST ast, nt) first_table = snd $ followFixPointW (Map.keysSet 
         (prod_idx, popped_work_list) = Set.deleteFindMax wkLst
         (Lhs a, Rhs bs) = all_productions !:?<>@$% prod_idx
         new_follow_table = followRule (Lhs a, Rhs bs) first_table follow_table nt 
-        bsNT = filter (\x -> Set.member x non_terms) bs
-        is_the_same = (follow_table !:?<>@$%% bsNT ) == (new_follow_table !:?<>@$%% bsNT )
+        allNT = a : filter (\x -> Set.member x non_terms) bs
+        is_the_same = all (==True) $ map (\x -> (follow_table !:?<>@$% x ) == (new_follow_table !:?<>@$% x))  allNT 
 
         new_wkLst = if is_the_same then  popped_work_list <> mempty 
-                    else popped_work_list `Set.union` (nt_to_prod_map !:?<>@$%% bsNT)
+                    else popped_work_list `Set.union` (nt_to_prod_map !:?<>@$%% allNT)
 
-        (!:?<>@$%%) :: (Show k, Ord k, Ord v) => Map k (Set v) -> [k] -> Set v
-        m !:?<>@$%% ks = foldl (\s k -> s `Set.union` (m !:?<>@$% k) ) mempty ks  
-        
 
 
 
@@ -258,7 +258,7 @@ followRule (Lhs lhs, Rhs rhs) first_table follow_table nt = newFollowTable
   where
     trailer = case Map.lookup lhs follow_table of
               Nothing  -> error "aaaaaaaaaaa"
-              Just lst -> lst
+              Just lst -> lst -- if lhs == "Trailer" || "Trailer" `elem` rhs then traceShow ("for "++ lhs ++ "->" ++ unlines rhs ++ " || follow(A): ", lst) $ lst else lst
     newFollowTable = fst $ foldr (\x b -> followAux x (snd b) first_table (fst b) nt) (follow_table, trailer) rhs
 
 followAux :: String -> Set String -> FirstTable -> FollowTable -> [NonTerminal] -> (FollowTable, Set String)

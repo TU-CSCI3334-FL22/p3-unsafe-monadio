@@ -16,6 +16,6 @@ for g in grammars:
     run(f'./Main -w {str(g)} > w.out', shell=True).check_returncode()
     run(f'./Main {str(g)} > nw.out', shell=True).check_returncode()
 
-    run(f'diff w.out nw.out', shell=True) #.check_returncode()
+    run(f'diff w.out nw.out', shell=True).check_returncode()
 
     print(f'Seems good: {str(g)}')
