@@ -9,6 +9,8 @@ GRAMMAR := grammars/SN-nonLL1-RR
 run: $(EXE)
 	./$(EXE) -wt $(GRAMMAR)
 
+build: $(EXE)
+
 $(EXE): $(SRCS)
 	ghc Main.hs -o $(EXE)
 

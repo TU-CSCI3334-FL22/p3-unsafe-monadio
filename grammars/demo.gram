@@ -1,7 +1,3 @@
-// demo is a small language that is not particularly useful,
-//      except as a target for labs on parsing, scanning, and
-//      IR generation.                 -- kdc  10/2015
-//
 Start            : ProcList
 	         ;
 
