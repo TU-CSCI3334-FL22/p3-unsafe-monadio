@@ -12,8 +12,8 @@ for g in grammars:
         print(f'Skipping {str(g)}')
         continue
 
-    run(f'./Main -w {str(g)} > w.out', shell=True).check_returncode()
-    run(f'./Main {str(g)} > nw.out', shell=True).check_returncode()
+    run(f'./llgen -w {str(g)} > w.out', shell=True).check_returncode()
+    run(f'./llgen {str(g)} > nw.out', shell=True).check_returncode()
 
     run(f'diff w.out nw.out', shell=True).check_returncode()
 
