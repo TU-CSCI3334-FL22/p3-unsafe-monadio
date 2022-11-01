@@ -24,12 +24,7 @@ import           Data.Set                          (Set)
 import qualified Data.Set                          as Set
 import           Data.String                       (IsString (fromString))
 import           Data.Tuple                        (swap)
-import           Debug.Trace                       (trace, traceShow,
-                                                    traceShowId)
-
-
-
-
+import           Util                              (nubSort)
 
 
 
@@ -38,6 +33,8 @@ type FirstTable = Map String (Set String)
 type FollowTable = Map NonTerminal (Set String)
 type NextTable = Map ProductSet (Set String)
 type PredictTable = Map NonTerminal (Set (Int,String))
+
+data WorkListOp = UseWorkList | NoWorkList deriving (Show, Eq, Ord)
 
 eof :: String
 eof = "eof"
@@ -49,10 +46,12 @@ fixedPoint s f
   where
     s' = f s
 
-makeTables :: (GrammarAST, [NonTerminal]) -> (FirstTable, FollowTable, NextTable)
-makeTables ir = (first_table, follow_table, next_table)
+makeTables :: WorkListOp -> (GrammarAST, [NonTerminal]) -> (FirstTable, FollowTable, NextTable)
+makeTables w ir = (first_table, follow_table, next_table)
   where
-    first_table = makeFirstTable ir
+    first_table = (case w of
+      UseWorkList -> makeFirstTableW
+      NoWorkList  -> makeFirstTable) ir
     follow_table = makeFollowTable ir first_table
     next_table = makeNextTable ir first_table follow_table
 
@@ -115,6 +114,70 @@ makeFirstTable (AST sets, non_term_ls) = fixedPoint start compute_once
 
 
             in (a, (first_table ! a) <> rhs_final) -- trace (a ++ " -> " ++ show rhs_final)
+
+
+(!:?<>@$%) :: (Show k, Ord k) => Map k v -> k -> v
+m !:?<>@$% k = case m Map.!? k of
+  Nothing -> error $ "key missing: " ++ show k
+  Just v  -> v
+
+
+
+makeFirstTableW :: (GrammarAST, [NonTerminal]) -> FirstTable
+makeFirstTableW (AST sets, non_term_ls) = snd $ compute_once (Map.keysSet all_productions, start)
+  where
+    non_terms = Set.fromList non_term_ls
+    all_symbols = allSymbols $ AST sets
+    terms = Set.difference all_symbols non_terms
+
+    terms_with_eof_e = Set.insert eof $ Set.insert "" terms -- epsilon is ""
+
+    all_productions = Map.fromList $ zip ([0..]::[Int]) $ allProductions $ AST sets
+
+    first_terms = Map.fromSet Set.singleton terms_with_eof_e
+
+    start = first_terms <> Map.fromSet mempty non_terms
+
+    nt_to_prod_map :: Map NonTerminal (Set Int)
+    nt_to_prod_map = Map.fromListWith (<>) (concatMap (\(k, (Lhs lhs, Rhs rhs)) ->
+      let
+        referenced_nts = nubSort $ takeWhile (not . (`Set.member` terms)) rhs
+      in map (,Set.singleton k) referenced_nts)
+      $ Map.toList all_productions) <> Map.fromSet (const mempty) non_terms
+
+    compute_once :: (Set Int, FirstTable) -> (Set Int, FirstTable)
+    compute_once (work_list, first_table)
+      | Set.null work_list = (mempty, first_table)
+      | otherwise = compute_once (new_work_list, updated)
+      where
+        (prod_idx, popped_work_list) = Set.deleteFindMax work_list
+
+        -- A -> B1 B2 B3 ... Bn
+        (Lhs a, Rhs bs) = all_productions !:?<>@$% prod_idx
+
+        -- to_set_no_eps(x) = First(x) // { eps }
+        to_set_no_eps = Set.delete "" . (first_table !:?<>@$%)
+
+        -- rhs = First(b_1) // { eps }
+        -- b_1 is [] if its just epsilon
+        rhs = to_set_no_eps $ fromMaybe "" $ safeHead bs
+
+        -- keep leading b_is where epsilon in First(b_i)
+        leading_b_i_with_epsilon = takeWhile (elem "" . (first_table !:?<>@$%)) bs
+
+        rhs_almost_final = rhs <> foldMap to_set_no_eps leading_b_i_with_epsilon
+
+        did_go_to_last = length bs == length leading_b_i_with_epsilon
+
+        -- if included b_k && eps in First(b_k), add eps to rhs
+        rhs_final = (if did_go_to_last && elem "" (first_table !:?<>@$% fromMaybe "" (safeLast bs)) then Set.insert "" else id) rhs_almost_final
+
+        updated = Map.insertWith (<>) a ((first_table !:?<>@$% a) <> rhs_final) first_table
+
+        is_the_same = (first_table !:?<>@$% a) == (updated !:?<>@$% a)
+
+        new_work_list = popped_work_list <> if is_the_same then mempty else nt_to_prod_map !:?<>@$% a
+
 
 
 safeHead :: [a] -> Maybe a

@@ -70,8 +70,10 @@ main = do
 
     let improvedIR = if optRevise opts then fixLL ir else ir
 
+    let useWorkList = if optWorklist opts then UseWorkList else NoWorkList
+
     nicePrint (fst ir)
-    let tables = makeTables improvedIR --(optWorklist opts)
+    let tables = makeTables useWorkList improvedIR --(optWorklist opts)
       in if not $ optTable opts
         then putStrLn $ showTables tables
        else case toYamlAll ir tables of
