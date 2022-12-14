@@ -15,7 +15,7 @@ import           Control.Arrow                     (Arrow (second, (&&&)))
 import           Data.Bifunctor                    (Bifunctor (bimap))
 import           Data.Foldable                     (sequenceA_, traverse_)
 import           Data.List                         (intercalate, intersperse,
-                                                    (\\))
+                                                    (\\), nub, sort)
 import           Data.Map.Strict                   (Map, fromList, (!))
 import qualified Data.Map.Strict                   as Map
 import           Data.Maybe                        (fromMaybe)
@@ -24,9 +24,10 @@ import           Data.Set                          (Set)
 import qualified Data.Set                          as Set
 import           Data.String                       (IsString (fromString))
 import           Data.Tuple                        (swap)
-import           Util                              (nubSort)
+--import           Util                              (nubSort)
 import          Debug.Trace                        (trace, traceShow, traceShowId)
 
+nubSort = nub.sort
 
 
 type FirstTable = Map String (Set String)
@@ -312,7 +313,7 @@ showNextTable table = unlines rows
     showPS :: ProductSet -> String
     showPS (GrammarProductionSet (Lhs lhs) ((Rhs rhs):_)) = lhs ++ " -> " ++ (case rhs of [] -> "ε"; ls -> unwords ls)
 
-    rows = map ((\(a,b) -> padder 30 a <> " : " <> b) . bimap showPS (unwords . Set.toList)) $ Map.toList table
+    rows = map ((\(a,b) -> padder 30 a <> " : " <> b) . bimap showPS (unwords . filter (not . null). Set.toList)) $ Map.toList table
 
 showFollowTable :: FollowTable -> String
 showFollowTable table = unlines rows
@@ -382,7 +383,7 @@ singletonMapToYaml :: String -> String -> String
 singletonMapToYaml k v = "{" ++ k ++ ": " ++ v ++ "}"
 
 mapToYaml :: Show a => [(String, a)] -> String
-mapToYaml ls = "{" ++ intercalate ", " (map (\(a,b) -> a ++ ": " ++ show b) ls) ++ "}"
+mapToYaml ls = "{" ++ intercalate ", " (map (\(a,b) -> a ++ ": " ++ show b) [(a,b) | (a,b) <- ls, not (null a)]) ++ "}"
 
 -- instance ToYaml a => ToYaml (Set a) where
 --   toYaml = toYaml . Set.toList

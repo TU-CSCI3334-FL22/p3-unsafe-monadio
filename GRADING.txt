@@ -1,0 +1,12 @@
+Interface: 4
+* Left a nicePrint in that produces extraneous output
+Scanner/Parser: 10
+Correctness: 50
+YAML table: 17
+* Did not generate correct YAML in some cases due to empty strings as keys in the next table. Epsilons left over, maybe?
+* Otherwise passes tests
+* Detects non-LL(1), but output is not clean.
+Worklists: 10
+* Worklists implemented, work, and seem to be proper worklist algorithms (as far as I can read).
+Missing Points: 5
+Total: 96 (A) 
